@@ -121,17 +121,24 @@ replaceRefsLatex' prefix opts cits =
         else
           listLabels prefix "\\ref{" ", " "}" cits
     suppressAuthor = all (==SuppressAuthor) $ map citationMode cits
+    extendedRef = all (==(toList $ text "*")) $ map citationPrefix cits
     noPrefix = all null $ map citationPrefix cits
-    p | cref opts = id
+    p | cref opts
+      = id
       | suppressAuthor
       = id
       | noPrefix
       = getRefPrefix opts prefix cap (length cits - 1)
-      | otherwise = ((citationPrefix (head cits) ++ [Space]) ++)
+      | otherwise
+      = ((citationPrefix (head cits) ++ [Space]) ++)
     cap = maybe False isFirstUpper $ getLabelPrefix . citationId . head $ cits
     cref' | suppressAuthor = "\\labelcref"
-          | cap = "\\Cref"
-          | otherwise = "\\cref"
+          | extendedRef = if cap
+                            then "\\Vref"
+                            else "\\vref"
+          | otherwise = if cap
+                           then "\\Cref"
+                           else "\\cref"
 
 listLabels :: String -> String -> String -> String -> [Citation] -> String
 listLabels prefix p sep s =
