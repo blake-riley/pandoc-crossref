@@ -112,7 +112,7 @@ replaceRefsLatex prefix opts cits
 
 replaceRefsLatex' :: String -> Options -> [Citation] -> WS [Inline]
 replaceRefsLatex' prefix opts cits =
-  return $ p [texcit]
+  return $ p [texcit] ++ refSuffix
   where
     texcit =
       RawInline (Format "tex") $
@@ -126,6 +126,9 @@ replaceRefsLatex' prefix opts cits =
     endsInStar x 
       | null x    = False
       | otherwise = ((last . toList $ text "*") == (last x))
+    refSuffix
+      | (length cits == 1) = head $ map citationSuffix cits
+      | otherwise          = []
     noPrefix = all null $ map citationPrefix cits
     p | cref opts      = id
       | suppressAuthor = id
