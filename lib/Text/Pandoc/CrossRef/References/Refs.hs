@@ -118,8 +118,8 @@ replaceRefsLatex' prefix opts cits =
       RawInline (Format "tex") $
       if cref opts then
         cref'++"{"++listLabels prefix "" "," "" cits++"}"
-        else
-          listLabels prefix "\\ref{" ", " "}" cits
+      else
+        listLabels prefix "\\ref{" ", " "}" cits
     suppressAuthor = all (==SuppressAuthor) $ map citationMode cits
     extendedRef = all endsInStar $ map citationPrefix cits
     endsInStar :: [Inline] -> Bool
@@ -127,14 +127,10 @@ replaceRefsLatex' prefix opts cits =
       | null x    = False
       | otherwise = ((last . toList $ text "*") == (last x))
     noPrefix = all null $ map citationPrefix cits
-    p | cref opts
-      = id
-      | suppressAuthor
-      = id
-      | noPrefix
-      = getRefPrefix opts prefix cap (length cits - 1)
-      | otherwise
-      = ((citationPrefix (head cits) ++ [Space]) ++)
+    p | cref opts      = id
+      | suppressAuthor = id
+      | noPrefix       = getRefPrefix opts prefix cap (length cits - 1)
+      | otherwise      = ((citationPrefix (head cits) ++ [Space]) ++)
     cap = maybe False isFirstUpper $ getLabelPrefix . citationId . head $ cits
     cref' | suppressAuthor = "\\labelcref"
           | extendedRef = if cap
