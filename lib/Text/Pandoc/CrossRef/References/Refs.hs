@@ -121,7 +121,11 @@ replaceRefsLatex' prefix opts cits =
         else
           listLabels prefix "\\ref{" ", " "}" cits
     suppressAuthor = all (==SuppressAuthor) $ map citationMode cits
-    extendedRef = all (==(toList $ text "*")) $ map citationPrefix cits
+    extendedRef = all endsInStar $ map citationPrefix cits
+    endsInStar :: [Inline] -> Bool
+    endsInStar x 
+      | null x    = False
+      | otherwise = ((last . toList $ text "*") == (last x))
     noPrefix = all null $ map citationPrefix cits
     p | cref opts
       = id
