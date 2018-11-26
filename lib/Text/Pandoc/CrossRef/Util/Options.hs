@@ -18,9 +18,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 -}
 
-module Text.Pandoc.CrossRef.Util.Options (Options(..)) where
+module Text.Pandoc.CrossRef.Util.Options where
 import Text.Pandoc.Definition
 import Text.Pandoc.CrossRef.Util.Template
+import Text.Pandoc.CrossRef.Util.Prefixes
+import qualified Data.Map as M
+import Text.Pandoc.Builder
+import Data.Maybe
+import Data.List
+import Data.List.Extra
+import Text.Pandoc.CrossRef.Util.LatexPrefixes
 
 data Options = Options { cref :: Bool
                        , chaptersDepth   :: Int
@@ -29,40 +36,56 @@ data Options = Options { cref :: Bool
                        , autoSectionLabels  :: Bool
                        , numberSections  :: Bool
                        , sectionsDepth  :: Int
-                       , figPrefix   :: Bool -> Int -> [Inline]
-                       , eqnPrefix   :: Bool -> Int -> [Inline]
-                       , tblPrefix   :: Bool -> Int -> [Inline]
-                       , lstPrefix   :: Bool -> Int -> [Inline]
-                       , secPrefix   :: Bool -> Int -> [Inline]
-                       , figPrefixTemplate :: Template
-                       , eqnPrefixTemplate :: Template
-                       , tblPrefixTemplate :: Template
-                       , lstPrefixTemplate :: Template
-                       , secPrefixTemplate :: Template
                        , refIndexTemplate :: Template
                        , subfigureRefIndexTemplate :: Template
                        , secHeaderTemplate :: Template
-                       , chapDelim   :: [Inline]
-                       , rangeDelim  :: [Inline]
-                       , pairDelim  :: [Inline]
-                       , lastDelim  :: [Inline]
-                       , refDelim  :: [Inline]
-                       , lofTitle    :: [Block]
-                       , lotTitle    :: [Block]
-                       , lolTitle    :: [Block]
+                       , chapDelim   :: Inlines
+                       , rangeDelim  :: Inlines
+                       , pairDelim  :: Inlines
+                       , lastDelim  :: Inlines
+                       , refDelim  :: Inlines
                        , outFormat   :: Maybe Format
-                       , figureTemplate :: Template
-                       , subfigureTemplate :: Template
-                       , subfigureChildTemplate :: Template
                        , ccsTemplate :: Template
-                       , tableTemplate  :: Template
-                       , listingTemplate :: Template
-                       , customLabel :: String -> Int -> Maybe String
-                       , ccsDelim :: [Inline]
-                       , ccsLabelSep :: [Inline]
+                       , ccsDelim :: Inlines
+                       , ccsLabelSep :: Inlines
                        , tableEqns :: Bool
                        , autoEqnLabels :: Bool
                        , subfigGrid :: Bool
                        , linkReferences :: Bool
                        , nameInLink :: Bool
+                       , prefixes :: Prefixes
+                       , latexPrefixes :: LatexPrefixes
                        }
+
+prefixList :: Options -> [String]
+prefixList = M.keys . prefixes
+
+pfxCaptionTemplate :: Options -> String -> Template
+pfxCaptionTemplate opts pfx = prefixCaptionTemplate $ getPfx opts pfx
+
+getPfx :: Options -> String -> Prefix
+getPfx o pn = fromMaybe defaultPfx $ M.lookup pn $ prefixes o
+  where
+    defaultPfx = error $ "Undefined prefix: \"" <> pn <> "\""
+
+getRefPrefix :: Options -> String -> Maybe String
+getRefPrefix opts label
+  | ':' `notElem` label = Nothing
+  | otherwise =
+    let pfx = takeWhile (/=':') label
+    in if pfx `elem` prefixList opts
+       then Just pfx
+       else Nothing
+
+getRefLabel :: Options -> [Inline] -> Maybe String
+getRefLabel _ [] = Nothing
+getRefLabel opts ils
+  | Str attr <- last ils
+  , all (==Space) (init ils)
+  , Just lbl <- stripPrefix "{#" attr >>= stripSuffix "}"
+  , Just _ <- getRefPrefix opts lbl
+  = Just lbl
+getRefLabel _ _ = Nothing
+
+getTitleForListOf :: Options -> String -> Blocks
+getTitleForListOf opts = prefixListOfTitle . getPfx opts

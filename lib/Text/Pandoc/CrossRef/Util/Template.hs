@@ -30,37 +30,43 @@ import Text.Pandoc.Builder
 import Text.Pandoc.Generic
 import qualified Data.Map as M hiding (toList, fromList, singleton)
 import Text.Pandoc.CrossRef.Util.Meta
+import Text.Pandoc.CrossRef.Util.Settings.Types
 import Control.Applicative
 import Text.Read
 
 type VarFunc = String -> Maybe MetaValue
-newtype Template = Template (VarFunc -> [Inline])
+newtype Template = Template (VarFunc -> Inlines)
 
-makeTemplate :: Meta -> [Inline] -> Template
-makeTemplate dtv xs' = Template $ \vf -> scan (\var -> vf var <|> lookupMeta var dtv) xs'
+makeTemplate :: Settings -> Inlines -> Template
+makeTemplate dtv xs' = Template $ \vf -> fromList $ scan (\var -> vf var <|> lookupSettings var dtv) $ toList xs'
   where
+  scan :: (String -> Maybe MetaValue) -> [Inline] -> [Inline]
   scan = bottomUp . go
-  go vf (x@(Math DisplayMath var):xs)
+  go vf ((Math DisplayMath var):xs)
     | '[' `elem` var  && ']' == last var =
       let (vn, idxBr) = span (/='[') var
           idxVar = drop 1 $ takeWhile (/=']') idxBr
           idx = readMaybe . toString ("index variable " ++ idxVar) =<< (vf idxVar)
           arr = do
             i <- idx
-            v <- lookupMeta vn dtv
+            v <- lookupSettings vn dtv
             getList i v
-      in toList $ fromList (replaceVar var arr [x]) <> fromList xs
-    | otherwise = toList $ fromList (replaceVar var (vf var) [x]) <> fromList xs
+      in toList $ (replaceVar arr id) <> fromList xs
+    | '#' `elem` var =
+      let (vn, pfx') = span (/='#') var
+          pfx = drop 1 pfx'
+      in toList $ (replaceVar (vf vn) (text pfx <>)) <> fromList xs
+    | otherwise = toList $ (replaceVar (vf var) id) <> fromList xs
+    where replaceVar val m = maybe mempty (m . toInlines ("variable " ++ var)) val
   go _ (x:xs) = toList $ singleton x <> fromList xs
   go _ [] = []
-  replaceVar var val def' = maybe def' (toInlines ("variable " ++ var)) val
 
-applyTemplate' :: M.Map String [Inline] -> Template -> [Inline]
+applyTemplate' :: M.Map String Inlines -> Template -> Inlines
 applyTemplate' vars (Template g) = g internalVars
   where
-  internalVars x | Just v <- M.lookup x vars = Just $ MetaInlines v
+  internalVars x | Just v <- M.lookup x vars = Just $ MetaInlines $ toList v
   internalVars _   = Nothing
 
-applyTemplate :: [Inline] -> [Inline] -> Template -> [Inline]
+applyTemplate :: Inlines -> Inlines -> Template -> Inlines
 applyTemplate i t =
   applyTemplate' (M.fromDistinctAscList [("i", i), ("t", t)])

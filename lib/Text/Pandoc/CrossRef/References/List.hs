@@ -21,6 +21,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 module Text.Pandoc.CrossRef.References.List (listOf) where
 
 import Text.Pandoc.Definition
+import Text.Pandoc.Builder
 import Data.Accessor.Monad.Trans.State
 import Control.Arrow
 import Data.List
@@ -31,30 +32,39 @@ import Text.Pandoc.CrossRef.Util.Util
 import Text.Pandoc.CrossRef.Util.Options
 
 listOf :: Options -> [Block] -> WS [Block]
+listOf opts (RawBlock (Format "latex") cmd:xs)
+  | Just pfxBrace <- "\\listof{" `stripPrefix` cmd
+  , (pfx, "}") <- span (/='}') pfxBrace
+  = getPfxData pfx >>= fmap toList . makeList opts pfx (fromList xs)
 listOf Options{outFormat=f} x | isLatexFormat f = return x
 listOf opts (RawBlock fmt "\\listoffigures":xs)
   | isLaTeXRawBlockFmt fmt
-  = get imgRefs >>= makeList opts lofTitle xs
+  = getPfxData "fig" >>= fmap toList . makeList opts "fig" (fromList xs)
 listOf opts (RawBlock fmt "\\listoftables":xs)
   | isLaTeXRawBlockFmt fmt
-  = get tblRefs >>= makeList opts lotTitle xs
+  = getPfxData "tbl" >>= fmap toList . makeList opts "tbl" (fromList xs)
 listOf opts (RawBlock fmt "\\listoflistings":xs)
   | isLaTeXRawBlockFmt fmt
-  = get lstRefs >>= makeList opts lolTitle xs
+  = getPfxData "lst" >>= fmap toList . makeList opts "lst" (fromList xs)
 listOf _ x = return x
 
-makeList :: Options -> (Options -> [Block]) -> [Block] -> M.Map String RefRec -> WS [Block]
+getPfxData :: String -> WS RefMap
+getPfxData pfx = M.filterWithKey (\k _ -> (pfx <> ":") `isPrefixOf` k) <$> get referenceData
+
+makeList :: Options -> String -> Blocks -> M.Map String RefRec -> WS Blocks
 makeList opts titlef xs refs
   = return $
-      titlef opts ++
+      getTitleForListOf opts titlef <>
       (if chaptersDepth opts > 0
-        then Div ("", ["list"], []) (itemChap `map` refsSorted)
-        else OrderedList style (item `map` refsSorted))
-      : xs
+        then divWith ("", ["list"], []) (mconcat $ map itemChap refsSorted)
+        else orderedList (map item refsSorted))
+      <> xs
   where
+    refsSorted :: [(String, RefRec)]
     refsSorted = sortBy compare' $ M.toList refs
     compare' (_,RefRec{refIndex=i}) (_,RefRec{refIndex=j}) = compare i j
-    item = (:[]) . Plain . refTitle . snd
-    itemChap = Para . uncurry ((. (Space :)) . (++)) . (numWithChap . refIndex &&& refTitle) . snd
+    item = plain . refTitle . snd
+    itemChap :: (String, RefRec) -> Blocks
+    itemChap = para . uncurry (\ x x0 -> x <> space <> x0) . ((numWithChap . refIndex) &&& refTitle) . snd
+    numWithChap :: Index -> Inlines
     numWithChap = chapPrefix (chapDelim opts)
-    style = (1,DefaultStyle,DefaultDelim)

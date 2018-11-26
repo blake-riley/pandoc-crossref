@@ -25,20 +25,22 @@ module Text.Pandoc.CrossRef.Util.ModifyMeta
 
 import Data.List (intercalate)
 import Text.Pandoc
+import Text.Pandoc.Shared (blocksToInlines)
 import Text.Pandoc.Builder hiding ((<>))
 import Text.Pandoc.CrossRef.Util.Options
-import Text.Pandoc.CrossRef.Util.Meta
+import Text.Pandoc.CrossRef.Util.Prefixes
+import Text.Pandoc.CrossRef.Util.Settings.Types
 import Text.Pandoc.CrossRef.Util.Util
 import qualified Data.Text as T
 import Control.Monad.Writer
 
-modifyMeta :: Options -> Meta -> Meta
+modifyMeta :: Options -> Settings -> Meta
 modifyMeta opts meta
   | isLatexFormat (outFormat opts)
   = setMeta "header-includes"
-      (headerInc $ lookupMeta "header-includes" meta)
-      meta
-  | otherwise = meta
+      (headerInc $ lookupSettings "header-includes" meta)
+      $ unSettings meta
+  | otherwise = unSettings meta
   where
     headerInc :: Maybe MetaValue -> MetaValue
     headerInc Nothing = incList
@@ -65,36 +67,37 @@ modifyMeta opts meta
           ]
         floatnames = [
             "\\AtBeginDocument{%"
-          , "\\renewcommand*\\figurename{"++metaString "figureTitle"++"}"
-          , "\\renewcommand*\\tablename{"++metaString "tableTitle"++"}"
+          , "\\renewcommand*\\figurename{"++getFloatCaption "fig"++"}"
+          , "\\renewcommand*\\tablename{"++getFloatCaption "tbl"++"}"
           , "}"
           ]
         listnames = [
             "\\AtBeginDocument{%"
-          , "\\renewcommand*\\listfigurename{"++metaString' "lofTitle"++"}"
-          , "\\renewcommand*\\listtablename{"++metaString' "lotTitle"++"}"
+          , "\\renewcommand*\\listfigurename{"++getListOfTitle "fig"++"}"
+          , "\\renewcommand*\\listtablename{"++getListOfTitle "tbl"++"}"
           , "}"
           ]
         codelisting = [
             usepackage [] "float"
           , "\\floatstyle{ruled}"
           , "\\@ifundefined{c@chapter}{\\newfloat{codelisting}{h}{lop}}{\\newfloat{codelisting}{h}{lop}[chapter]}"
-          , "\\floatname{codelisting}{"++metaString "listingTitle"++"}"
+          , "\\floatname{codelisting}{"++getListOfTitle "lst"++"}"
           ]
         lolcommand
           | listings opts = [
               "\\newcommand*\\listoflistings\\lstlistoflistings"
             , "\\AtBeginDocument{%"
-            , "\\renewcommand*{\\lstlistlistingname}{"++metaString' "lolTitle"++"}"
+            , "\\renewcommand*{\\lstlistlistingname}{"++getListOfTitle "lst"++"}"
             , "}"
             ]
-          | otherwise = ["\\newcommand*\\listoflistings{\\listof{codelisting}{"++metaString' "lolTitle"++"}}"]
+          | otherwise = ["\\newcommand*\\listoflistings{\\listof{codelisting}{"++getListOfTitle "lst"++"}}"]
         cleveref = [ usepackage cleverefOpts "cleveref" ]
-          <> crefname "figure" figPrefix
-          <> crefname "table" tblPrefix
-          <> crefname "equation" eqnPrefix
-          <> crefname "listing" lstPrefix
-          <> crefname "section" secPrefix
+          <> crefname "figure" (pfxRef "fig")
+          <> crefname "table" (pfxRef "tbl")
+          <> crefname "equation" (pfxRef "eq")
+          <> crefname "listing" (pfxRef "lst")
+          <> crefname "section" (pfxRef "sec")
+        pfxRef labelPrefix = prefixRef . flip getPfx labelPrefix
         cleverefCodelisting = [
             "\\crefname{codelisting}{\\cref@listing@name}{\\cref@listing@name@plural}"
           , "\\Crefname{codelisting}{\\Cref@listing@name}{\\Cref@listing@name@plural}"
@@ -109,7 +112,7 @@ modifyMeta opts meta
         usepackage xs p = "\\@ifpackageloaded{"++p++"}{}{\\usepackage"++o++"{"++p++"}}"
           where o = "[" ++ intercalate "," xs ++ "]"
         toLatex = either (error . show) T.unpack . runPure . writeLaTeX def . Pandoc nullMeta . return . Plain
-        metaString s = toLatex $ getMetaInlines s meta
-        metaString' s = toLatex [Str $ getMetaString s meta]
-        prefix f uc = "{" ++ toLatex (f opts uc 0) ++ "}" ++
-                      "{" ++ toLatex (f opts uc 1) ++ "}"
+        getListOfTitle = toLatex . blocksToInlines . toList . getTitleForListOf opts
+        getFloatCaption = toLatex . toList . prefixTitle . getPfx opts
+        prefix f uc = "{" ++ toLatex (toList $ f opts uc 0) ++ "}" ++
+                      "{" ++ toLatex (toList $ f opts uc 1) ++ "}"

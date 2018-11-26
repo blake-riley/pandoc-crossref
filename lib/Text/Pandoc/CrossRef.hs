@@ -88,13 +88,12 @@ import Data.Monoid ((<>))
 import Text.Pandoc.CrossRef.References
 import Text.Pandoc.CrossRef.Util.Settings
 import Text.Pandoc.CrossRef.Util.Options as O
-import Text.Pandoc.CrossRef.Util.CodeBlockCaptions
 import Text.Pandoc.CrossRef.Util.ModifyMeta
 import Text.Pandoc.CrossRef.Util.Settings.Gen as SG
 
 -- | Enviromnent for 'CrossRefM'
 data CrossRefEnv = CrossRefEnv {
-                      creSettings :: Meta -- ^Metadata settings
+                      creSettings :: Settings -- ^Metadata settings
                     , creOptions :: Options -- ^Internal pandoc-crossref options
                    }
 
@@ -109,8 +108,7 @@ crossRefBlocks blocks = do
   opts <- R.asks creOptions
   let
     doWalk =
-      bottomUpM (mkCodeBlockCaptions opts) blocks
-      >>= replaceAll opts
+      replaceAll opts blocks
       >>= bottomUpM (replaceRefs opts)
       >>= bottomUpM (listOf opts)
   return $ evalState doWalk def
@@ -142,7 +140,7 @@ This is primary function to work with 'CrossRefM' -}
 runCrossRef :: forall a b. Meta -> Maybe Format -> (a -> CrossRefM b) -> a -> b
 runCrossRef meta fmt action arg = R.runReader (action arg) env
   where
-    settings = meta <> defaultMeta
+    settings = Settings meta <> defaultMeta
     env = CrossRefEnv {
             creSettings = settings
           , creOptions = getOptions settings fmt

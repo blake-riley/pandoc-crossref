@@ -29,9 +29,7 @@ import Text.Pandoc.Definition
 import Text.Pandoc.Builder hiding ((<>))
 import Text.Pandoc.Class
 import Data.Char (toUpper, toLower, isUpper)
-import Data.List (isSuffixOf, isPrefixOf, stripPrefix)
-import Data.Maybe (fromMaybe)
-import Data.Generics
+import Data.Generics hiding (Prefix)
 import Text.Pandoc.Writers.LaTeX
 import Data.Default
 import Data.Monoid ((<>))
@@ -60,8 +58,8 @@ isFirstUpper :: String -> Bool
 isFirstUpper (x:_) = isUpper x
 isFirstUpper [] = False
 
-chapPrefix :: [Inline] -> Index -> [Inline]
-chapPrefix delim index = toList $ intercalate' (fromList delim) (map (str . uncurry (fromMaybe . show)) index)
+chapPrefix :: Inlines -> Index -> Inlines
+chapPrefix delim index = intercalate' delim (map (str . snd) index)
 
 data ReplacedResult a = Replaced Bool a | NotReplaced Bool
 type GenRR m = forall a. Data a => (a -> m (ReplacedResult a))
@@ -112,16 +110,6 @@ mkLaTeXLabel' l =
   let ll = either (error . show) T.unpack $
             runPure (writeLaTeX def $ Pandoc nullMeta [Div (l, [], []) []])
   in takeWhile (/='}') . drop 1 . dropWhile (/='{') $ ll
-
-getRefLabel :: String -> [Inline] -> Maybe String
-getRefLabel _ [] = Nothing
-getRefLabel tag ils
-  | Str attr <- last ils
-  , all (==Space) (init ils)
-  , "}" `isSuffixOf` attr
-  , ("{#"++tag++":") `isPrefixOf` attr
-  = init `fmap` stripPrefix "{#" attr
-getRefLabel _ _ = Nothing
 
 isSpace :: Inline -> Bool
 isSpace = (||) <$> (==Space) <*> (==SoftBreak)

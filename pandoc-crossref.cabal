@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2cd0206988abd6c996a007085e3e239d62131d1ab25f6075cf86d49407c2c5e9
+-- hash: fb0025890a7dc67a63203364ebb9f5a88c9aea1b4631dd035bbb64b98704afb6
 
 name:           pandoc-crossref
-version:        0.3.4.0
+version:        0.4.0.0
 synopsis:       Pandoc filter for cross-references
 description:    pandoc-crossref is a pandoc filter for numbering figures, equations, tables and cross-references to them.
 category:       Text
@@ -25,6 +25,9 @@ extra-source-files:
 data-files:
     docs/demo/demo.md
     docs/index.md
+    test/m2m/custom-prefixes/expect.md
+    test/m2m/custom-prefixes/expect.tex
+    test/m2m/custom-prefixes/input.md
     test/m2m/delim/expect.md
     test/m2m/delim/expect.tex
     test/m2m/delim/input.md
@@ -82,12 +85,15 @@ library
       Text.Pandoc.CrossRef.References.Types
       Text.Pandoc.CrossRef.Util.CodeBlockCaptions
       Text.Pandoc.CrossRef.Util.CustomLabels
+      Text.Pandoc.CrossRef.Util.LatexPrefixes
       Text.Pandoc.CrossRef.Util.Meta
       Text.Pandoc.CrossRef.Util.ModifyMeta
       Text.Pandoc.CrossRef.Util.Options
+      Text.Pandoc.CrossRef.Util.Prefixes
       Text.Pandoc.CrossRef.Util.Settings
       Text.Pandoc.CrossRef.Util.Settings.Gen
       Text.Pandoc.CrossRef.Util.Settings.Template
+      Text.Pandoc.CrossRef.Util.Settings.Types
       Text.Pandoc.CrossRef.Util.Template
       Text.Pandoc.CrossRef.Util.Util
       Paths_pandoc_crossref
@@ -102,6 +108,7 @@ library
     , data-accessor-transformers >=0.2.1.6 && <0.3.0.0
     , data-default >=0.4 && <0.8
     , directory >=1 && <1.4
+    , extra >=1.6 && <1.7
     , filepath >=1.1 && <1.5
     , mtl >=1.1 && <2.3
     , pandoc >=2.3 && <2.5
@@ -130,6 +137,7 @@ executable pandoc-crossref
     , data-default >=0.4 && <0.8
     , deepseq >=1.4 && <1.5
     , directory >=1 && <1.4
+    , extra >=1.6 && <1.7
     , filepath >=1.1 && <1.5
     , gitrev >=1.3.1 && <1.4
     , mtl >=1.1 && <2.3
@@ -160,6 +168,7 @@ test-suite test-integrative
     , data-accessor-transformers >=0.2.1.6 && <0.3.0.0
     , data-default >=0.4 && <0.8
     , directory >=1 && <1.4
+    , extra >=1.6 && <1.7
     , filepath >=1.1 && <1.5
     , hspec >=2.4.4 && <3
     , mtl >=1.1 && <2.3
@@ -188,12 +197,15 @@ test-suite test-pandoc-crossref
       Text.Pandoc.CrossRef.References.Types
       Text.Pandoc.CrossRef.Util.CodeBlockCaptions
       Text.Pandoc.CrossRef.Util.CustomLabels
+      Text.Pandoc.CrossRef.Util.LatexPrefixes
       Text.Pandoc.CrossRef.Util.Meta
       Text.Pandoc.CrossRef.Util.ModifyMeta
       Text.Pandoc.CrossRef.Util.Options
+      Text.Pandoc.CrossRef.Util.Prefixes
       Text.Pandoc.CrossRef.Util.Settings
       Text.Pandoc.CrossRef.Util.Settings.Gen
       Text.Pandoc.CrossRef.Util.Settings.Template
+      Text.Pandoc.CrossRef.Util.Settings.Types
       Text.Pandoc.CrossRef.Util.Template
       Text.Pandoc.CrossRef.Util.Util
       Paths_pandoc_crossref
@@ -209,6 +221,7 @@ test-suite test-pandoc-crossref
     , data-accessor-transformers >=0.2.1.6 && <0.3.0.0
     , data-default >=0.4 && <0.8
     , directory >=1 && <1.4
+    , extra >=1.6 && <1.7
     , filepath >=1.1 && <1.5
     , hspec >=2.4.4 && <3
     , mtl >=1.1 && <2.3
