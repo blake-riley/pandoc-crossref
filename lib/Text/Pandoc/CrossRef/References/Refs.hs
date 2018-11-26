@@ -119,7 +119,7 @@ replaceRefsLatex' prefix opts cits =
 
 listLabels :: String -> String -> String -> String -> [Citation] -> String
 listLabels _prefix p sep s =
-  intercalate sep . map ((p ++) . (++ s) . mkLaTeXLabel' . citationId)
+  intercalate sep . map ((p ++) . (++ s) . uncapitalizeFirst . mkLaTeXLabel' . citationId)
 
 getLabelPrefix :: Options -> String -> Maybe String
 getLabelPrefix opts lab
