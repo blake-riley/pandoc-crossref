@@ -1,3 +1,5 @@
+bin
+static-build
 .stack-work
 .cabal-sandbox
 .pandoc-*
@@ -6,3 +8,5 @@ dist-newstyle
 cabal.sandbox.config
 mkcheck.sh
 mkinttest.sh
+/pandoc-crossref
+/*.tar.gz
