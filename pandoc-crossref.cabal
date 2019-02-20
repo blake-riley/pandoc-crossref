@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 847a21ccf0ed913285a4669bc1393aee19dee0cd2868ce7aee7ec37230220b49
+-- hash: b019c9e3e9e85522e4f62ec3b1985acbc6773ca9d58bc8568ecc2f4c2eb93e9e
 
 name:           pandoc-crossref
 version:        0.4.0.0
@@ -52,6 +52,9 @@ data-files:
     test/m2m/listing-captions-ids/expect.md
     test/m2m/listing-captions-ids/expect.tex
     test/m2m/listing-captions-ids/input.md
+    test/m2m/regresssion-219/expect.md
+    test/m2m/regresssion-219/expect.tex
+    test/m2m/regresssion-219/input.md
     test/m2m/section-template/expect.md
     test/m2m/section-template/expect.tex
     test/m2m/section-template/input.md
@@ -111,7 +114,7 @@ library
     , extra >=1.6 && <1.7
     , filepath >=1.1 && <1.5
     , mtl >=1.1 && <2.3
-    , pandoc >=2.3 && <2.6
+    , pandoc >=2.3 && <2.7
     , pandoc-types >=1.17.5.1 && <1.18
     , roman-numerals ==0.5.*
     , syb >=0.4 && <0.8
@@ -143,7 +146,7 @@ executable pandoc-crossref
     , mtl >=1.1 && <2.3
     , open-browser >=0.2 && <0.3
     , optparse-applicative >=0.13 && <0.15
-    , pandoc >=2.3 && <2.6
+    , pandoc >=2.3 && <2.7
     , pandoc-crossref
     , pandoc-types >=1.17.5.1 && <1.18
     , roman-numerals ==0.5.*
@@ -172,7 +175,7 @@ test-suite test-integrative
     , filepath >=1.1 && <1.5
     , hspec >=2.4.4 && <3
     , mtl >=1.1 && <2.3
-    , pandoc >=2.3 && <2.6
+    , pandoc >=2.3 && <2.7
     , pandoc-crossref
     , pandoc-types >=1.17.5.1 && <1.18
     , roman-numerals ==0.5.*
@@ -225,7 +228,7 @@ test-suite test-pandoc-crossref
     , filepath >=1.1 && <1.5
     , hspec >=2.4.4 && <3
     , mtl >=1.1 && <2.3
-    , pandoc >=2.3 && <2.6
+    , pandoc >=2.3 && <2.7
     , pandoc-types >=1.17.5.1 && <1.18
     , roman-numerals ==0.5.*
     , syb >=0.4 && <0.8
